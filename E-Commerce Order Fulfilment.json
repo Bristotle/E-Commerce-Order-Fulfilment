@@ -1,0 +1,619 @@
+{
+  "name": "E-Commerce Order Fulfilment",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7048b8ea-8efb-43be-a277-8041f2078b7f",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -960,
+        -736
+      ],
+      "id": "2805a36f-ab1f-40a2-969c-37a3eec80e3c",
+      "name": "Wait for New Order",
+      "webhookId": "7048b8ea-8efb-43be-a277-8041f2078b7f"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "54e439de-c9d0-4ebb-bcac-bdb50f6d1314",
+              "name": "order_id",
+              "value": "={{ $json.data.object.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8fdfe902-316c-4363-b940-af5d47b875da",
+              "name": "customer_email",
+              "value": "={{ $json.data.object.customer_email }}",
+              "type": "string"
+            },
+            {
+              "id": "cb899e6c-619e-4307-aea3-04c134bc6222",
+              "name": "amount_paid",
+              "value": "={{ $json.data.object.amount / 100 }}",
+              "type": "string"
+            },
+            {
+              "id": "13022d78-cc10-423a-b10c-900fc217f522",
+              "name": "product_sku",
+              "value": "={{ $json.data.object.lines.data[0].metadata.sku }}",
+              "type": "string"
+            },
+            {
+              "id": "c9e2fb87-9ea6-43a4-9e90-d71fee2f97f6",
+              "name": "payment_status",
+              "value": "={{ $json.data.object.payment_status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -944,
+        -416
+      ],
+      "id": "286d01e7-15f0-408b-b0fe-3e78ed125476",
+      "name": "Set Order Context"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "345879ee-4331-4a38-9198-c5f89a386486",
+              "leftValue": "={{ $json.payment_status.toLowerCase() }}",
+              "rightValue": "paid",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        -304
+      ],
+      "id": "419c026e-c22d-4f50-af1e-1b8cf0f834d6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appETfkT7c5sESWe5",
+          "mode": "list",
+          "cachedResultName": "E-commerce Fulfillment",
+          "cachedResultUrl": "https://airtable.com/appETfkT7c5sESWe5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblg3MUCC8IXBr8IF",
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://airtable.com/appETfkT7c5sESWe5/tblg3MUCC8IXBr8IF"
+        },
+        "filterByFormula": "={SKU} = '{{ $json.product_sku }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -384,
+        -384
+      ],
+      "id": "d4092e2d-261c-468a-9167-c032bf8bf130",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "iV20nW36taxjz9Ws",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appETfkT7c5sESWe5",
+          "mode": "list",
+          "cachedResultName": "E-commerce Fulfillment",
+          "cachedResultUrl": "https://airtable.com/appETfkT7c5sESWe5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblg3MUCC8IXBr8IF",
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://airtable.com/appETfkT7c5sESWe5/tblg3MUCC8IXBr8IF"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "{{ $json.id }}",
+            "Inventory Quantity": "={{ $json['Inventory Quantity'] - 1 }}",
+            "Price": 0
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Product Name",
+              "displayName": "Product Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Price",
+              "displayName": "Price",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Inventory Quantity",
+              "displayName": "Inventory Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Product Photo",
+              "displayName": "Product Photo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Orders",
+              "displayName": "Orders",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Total Orders",
+              "displayName": "Total Orders",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Total Revenue",
+              "displayName": "Total Revenue",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Ordered Date",
+              "displayName": "Last Ordered Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Product Performance Summary (AI)",
+              "displayName": "Product Performance Summary (AI)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "SEO Keywords (AI)",
+              "displayName": "SEO Keywords (AI)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -752
+      ],
+      "id": "fb33a019-b459-4f6e-bcdf-2f151932d654",
+      "name": "Update Stock Record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "iV20nW36taxjz9Ws",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    \"order_id\": \"ch_1H7XfC2eZvKYlo2CN2r34JkL\",\n    \"customer_email\": \"customer@example.com\",\n    \"amount_paid\": 49.99,\n    \"product_sku\": \"EB1001\",\n    \"payment_status\": \"paid\" \n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        -672
+      ],
+      "id": "9f3cfb86-b589-4a1c-9603-16a31ca1f773",
+      "name": "Inject Valid Data"
+    },
+    {
+      "parameters": {
+        "sendTo": "emmanuelakyeam@gmail.com",
+        "subject": "=✅ New Order Verified: {{ $('Inject Valid Data').item.json.order_id }}",
+        "message": "=New Order Verified: <br><br> <strong>Email:</strong> {{ $('Inject Valid Data').item.json.customer_email }}<br> <strong>SKU:</strong> {{ $('Inject Valid Data').item.json.product_sku }} <br><br> Stock has been updated in Airtable. The new quantity is <strong>{{ $json.fields['Inventory Quantity'] }}</strong>. <br><br> Ready for fulfillment.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        -560
+      ],
+      "id": "b6a50d59-1b6a-47cc-8257-830f3e3adab9",
+      "name": "Notify Fulfillment Team",
+      "webhookId": "7236181a-7b38-4e5d-8616-741889a1f607",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PsJdznzeqcgYYORK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Inject Valid Data').item.json.customer_email }}",
+        "subject": "=Your order ({{ $('Inject Valid Data').item.json.order_id }}) is confirmed!",
+        "message": "=Hi!\n<br><br>\nYour payment for order {{ $('Inject Valid Data').item.json.order_id }} was successful.\n<br><br>\nYour item ({{ $('Inject Valid Data').item.json.product_sku }}) is now being prepared for shipment. We'll send a tracking number soon!\n<br><br>\nThanks for your business.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        -304
+      ],
+      "id": "ef6ad29c-a241-4f58-9e30-810647a1823e",
+      "name": "Send Order Confirmation",
+      "webhookId": "aa676605-73f4-4780-b554-7c753dd5caba",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PsJdznzeqcgYYORK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1LAy5GY1b6Y0n-6GOnyTEcNlutmSmd2ncClyM5aAvdtQ",
+          "mode": "id"
+        },
+        "name": "=Invoice - {{ $('Inject Valid Data').item.json.order_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -128,
+        -736
+      ],
+      "id": "4e9de745-8cbf-4c5c-96d8-803c06a51366",
+      "name": "Invoice from Template",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Q9eCMhzoPt8Qc0c6",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "replaceAll",
+              "text": "{{ $json.id }}",
+              "replaceText": "={{ $('Inject Valid Data').item.json.order_id }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{{ customer_email }}",
+              "replaceText": "={{ $('Inject Valid Data').item.json.customer_email }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{{ product_sku }}",
+              "replaceText": "={{ $('Inject Valid Data').item.json.product_sku }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{{ amount_paid }}",
+              "replaceText": "={{ $('Inject Valid Data').item.json.amount_paid + \"\" }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -432
+      ],
+      "id": "d32260d4-8da9-4f48-bddd-2a7b5a2391d0",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "h1asVsUxdkBMl0io",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.documentId }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/pdf",
+              "drawingsToFormat": "application/pdf",
+              "slidesToFormat": "application/pdf",
+              "sheetsToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        112,
+        -672
+      ],
+      "id": "5398a219-58b0-4c1e-b9e9-59aae387352b",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Q9eCMhzoPt8Qc0c6",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait for New Order": {
+      "main": [
+        [
+          {
+            "node": "Set Order Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Order Context": {
+      "main": [
+        [
+          {
+            "node": "Inject Valid Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Update Stock Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inject Valid Data": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stock Record": {
+      "main": [
+        [
+          {
+            "node": "Invoice from Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Fulfillment Team": {
+      "main": [
+        [
+          {
+            "node": "Send Order Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice from Template": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Notify Fulfillment Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "95e43c3f-a60f-4090-8c10-b56792834f5e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21735cdfd23504236344a02041a67dd8892b6ae032f1b9146afa70f4f8f9a1ba"
+  },
+  "id": "37M53c6lUdRSGszl",
+  "tags": []
+}
